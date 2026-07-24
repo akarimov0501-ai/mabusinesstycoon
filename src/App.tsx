@@ -15,6 +15,7 @@ import { WorldMapView } from './components/views/WorldMapView';
 import { AchievementsView } from './components/views/AchievementsView';
 import { StatisticsView } from './components/views/StatisticsView';
 import { SettingsView } from './components/views/SettingsView';
+import { LuxuryView } from './components/views/LuxuryView';
 import { EventModal } from './components/modals/EventModal';
 import { OfflineModal } from './components/modals/OfflineModal';
 import { FinancialReportModal } from './components/modals/FinancialReportModal';
@@ -66,6 +67,10 @@ export default function App() {
     resetGame,
     exportSave,
     importSave,
+    setCeoSalary,
+    payDividend,
+    buyLuxuryAsset,
+    sellLuxuryAsset,
   } = useGameEngine();
 
   const activeBusinessesCount = state.businesses.filter((b) => b.level > 0).length;
@@ -137,6 +142,17 @@ export default function App() {
                 financials={financials}
                 onTakeLoan={takeLoan}
                 onRepayLoan={repayLoan}
+              />
+            )}
+
+            {activeTab === 'luxury' && (
+              <LuxuryView
+                state={state}
+                financials={financials}
+                onBuyAsset={buyLuxuryAsset}
+                onSellAsset={sellLuxuryAsset}
+                onPayDividend={payDividend}
+                onSetCeoSalary={setCeoSalary}
               />
             )}
 

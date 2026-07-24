@@ -1,4 +1,5 @@
 import { GameState, Business, Country, EmployeeDept, TrainingProgram, ResearchTech, RdProject, MarketingCampaign, StockAsset, CryptoAsset, RealEstateAsset, StartupInvestment, Competitor, Achievement } from '../types/game';
+import { INITIAL_LUXURY_ASSETS } from './luxuryAssets';
 
 export const initialBusinesses: Business[] = [
   // Starting
@@ -1245,4 +1246,11 @@ export const initialGameState: GameState = {
   totalTaps: 0,
   totalBusinessesOwned: 1,
   totalBranchesOwned: 1,
+
+  // Personal Wealth & Luxury Empire
+  personalCash: 0,
+  ceoSalaryPerSec: 0,
+  totalDividendsPaid: 0,
+  prestigePoints: 0,
+  luxuryAssets: INITIAL_LUXURY_ASSETS,
 };

@@ -321,5 +321,44 @@ export interface GameState {
   totalTaps: number;
   totalBusinessesOwned: number;
   totalBranchesOwned: number;
+
+  // Personal Wealth & Luxury Empire (Phase 1)
+  personalCash: number;
+  ceoSalaryPerSec: number;
+  totalDividendsPaid: number;
+  prestigePoints: number;
+  luxuryAssets: LuxuryAsset[];
 }
+
+export type LuxuryCategory =
+  | 'Supercars'
+  | 'RealEstate'
+  | 'YachtsJets'
+  | 'ArtCollectibles'
+  | 'IslandsSpace';
+
+export interface LuxuryAsset {
+  id: string;
+  name: string;
+  category: LuxuryCategory;
+  description: string;
+  cost: number; // in personal cash
+  prestigePoints: number;
+  owned: boolean;
+  iconName: string; // Lucide icon name
+  upkeepPerSec?: number;
+  location?: string;
+  specs?: string;
+}
+
+export interface ForbesEntry {
+  rank: number;
+  name: string;
+  netWorth: number;
+  companyName: string;
+  isPlayer: boolean;
+  avatar: string;
+  country: string;
+}
+
 

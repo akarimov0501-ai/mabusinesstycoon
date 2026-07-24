@@ -292,11 +292,12 @@ export function useGameEngine() {
     });
     grossRevenue += stockDividendRevenue;
 
-    // Employee salaries expenses
+    // Employee salaries expenses & CEO salary
     s.employees.forEach((emp) => {
       const sal = emp.count * emp.baseSalary * emp.salaryMultiplier;
       employeeExpenses += sal;
     });
+    employeeExpenses += (s.ceoSalaryPerSec || 0);
 
     // Bank Loan servicing payments
     let loanPayments = 0;
@@ -337,7 +338,7 @@ export function useGameEngine() {
     const netProfitPerSec = grossRevenue > 0 && rawNetProfit > maxProfitCap ? maxProfitCap : rawNetProfit;
 
     // Asset Net worth calculation
-    let assetValue = s.cash;
+    let assetValue = s.cash + (s.personalCash || 0);
     s.businesses.forEach((b) => {
       assetValue += b.level * b.baseCost * 0.8;
     });
@@ -349,6 +350,11 @@ export function useGameEngine() {
     });
     s.realEstate.forEach((re) => {
       assetValue += re.ownedCount * re.cost;
+    });
+    (s.luxuryAssets || []).forEach((lux) => {
+      if (lux.owned) {
+        assetValue += lux.cost;
+      }
     });
     assetValue += s.goldOz * s.goldPrice;
     assetValue -= totalDebt; // Subtract bank debt from net worth
@@ -385,6 +391,20 @@ export function useGameEngine() {
       const newCash = Math.max(0, prev.cash + fin.netProfitPerSec * deltaSec);
       const newTotalEarned = fin.netProfitPerSec > 0 ? prev.totalEarned + fin.netProfitPerSec * deltaSec : prev.totalEarned;
       const newStockDividends = prev.stockDividendsEarned + fin.stockDividendRevenue * deltaSec;
+
+      // Personal Cash & Prestige calculation
+      let luxuryUpkeepSec = 0;
+      let assetPrestige = 0;
+      (prev.luxuryAssets || []).forEach((lux) => {
+        if (lux.owned) {
+          assetPrestige += lux.prestigePoints;
+          if (lux.upkeepPerSec) luxuryUpkeepSec += lux.upkeepPerSec;
+        }
+      });
+
+      const salaryGained = (prev.ceoSalaryPerSec || 0) * deltaSec;
+      const upkeepPaid = luxuryUpkeepSec * deltaSec;
+      const newPersonalCash = Math.max(0, (prev.personalCash || 0) + salaryGained - upkeepPaid);
 
       // Update Bank Loans (deduct remaining balance)
       const updatedLoans = (prev.loans || []).map((loan) => {
@@ -576,6 +596,8 @@ export function useGameEngine() {
       return {
         ...prev,
         cash: newCash,
+        personalCash: newPersonalCash,
+        prestigePoints: assetPrestige,
         netWorth: fin.netWorth,
         totalEarned: newTotalEarned,
         stockDividendsEarned: newStockDividends,
@@ -1313,6 +1335,77 @@ export function useGameEngine() {
     }
   }, [showNotification]);
 
+  const setCeoSalary = useCallback((salaryPerSec: number) => {
+    setState((prev) => ({
+      ...prev,
+      ceoSalaryPerSec: Math.max(0, salaryPerSec),
+    }));
+    sounds.playClick();
+  }, []);
+
+  const payDividend = useCallback((amount: number) => {
+    setState((prev) => {
+      if (amount <= 0 || prev.cash < amount) {
+        showNotification('Divident uchun kompaniyada yetarli naqd pul yo\'q!');
+        sounds.playError();
+        return prev;
+      }
+      sounds.playCash();
+      showNotification(`Kompaniyadan $${amount.toLocaleString()} shaxsiy hisobga divident o'tkazildi!`);
+      return {
+        ...prev,
+        cash: prev.cash - amount,
+        personalCash: (prev.personalCash || 0) + amount,
+        totalDividendsPaid: (prev.totalDividendsPaid || 0) + amount,
+      };
+    });
+  }, [showNotification]);
+
+  const buyLuxuryAsset = useCallback((assetId: string) => {
+    setState((prev) => {
+      const asset = (prev.luxuryAssets || []).find((l) => l.id === assetId);
+      if (!asset) return prev;
+      if (asset.owned) {
+        showNotification('Bu asset allaqachon xarid qilingan!');
+        return prev;
+      }
+      const pCash = prev.personalCash || 0;
+      if (pCash < asset.cost) {
+        showNotification(`Shaxsiy hisobingizda etarli pul yo'q! Xarid uchun: $${asset.cost.toLocaleString()}`);
+        sounds.playError();
+        return prev;
+      }
+      sounds.playSuccess();
+      showNotification(`Tabriklaymiz! "${asset.name}" shaxsiy mulkingizga aylandi!`);
+      return {
+        ...prev,
+        personalCash: pCash - asset.cost,
+        prestigePoints: (prev.prestigePoints || 0) + asset.prestigePoints,
+        luxuryAssets: (prev.luxuryAssets || []).map((l) =>
+          l.id === assetId ? { ...l, owned: true } : l
+        ),
+      };
+    });
+  }, [showNotification]);
+
+  const sellLuxuryAsset = useCallback((assetId: string) => {
+    setState((prev) => {
+      const asset = (prev.luxuryAssets || []).find((l) => l.id === assetId);
+      if (!asset || !asset.owned) return prev;
+      const refund = asset.cost * 0.8; // 80% resale value
+      sounds.playCash();
+      showNotification(`"${asset.name}" $${refund.toLocaleString()} evaziga sotildi.`);
+      return {
+        ...prev,
+        personalCash: (prev.personalCash || 0) + refund,
+        prestigePoints: Math.max(0, (prev.prestigePoints || 0) - asset.prestigePoints),
+        luxuryAssets: (prev.luxuryAssets || []).map((l) =>
+          l.id === assetId ? { ...l, owned: false } : l
+        ),
+      };
+    });
+  }, [showNotification]);
+
   const financials = calculateFinancials(state);
 
   return {
@@ -1353,6 +1446,10 @@ export function useGameEngine() {
     resetGame,
     exportSave,
     importSave,
+    setCeoSalary,
+    payDividend,
+    buyLuxuryAsset,
+    sellLuxuryAsset,
   };
 }
 
