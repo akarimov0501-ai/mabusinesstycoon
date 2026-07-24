@@ -169,17 +169,17 @@ export function useGameEngine() {
 
         grossRevenue += rev;
 
-        // COGS (Cost of Goods Sold: ~35% of gross business revenue)
-        const cogsRate = b.cogsPercent ?? 0.35;
+        // COGS (Cost of Goods Sold: ~25% of gross business revenue)
+        const cogsRate = b.cogsPercent ?? 0.25;
         cogsExpenses += rev * cogsRate;
 
-        // Rent expenses per business level
-        const baseRent = b.rentCost ?? (b.baseCost * 0.001);
-        rentExpenses += baseRent * b.level;
+        // Rent / Facility expenses (~7% of gross business revenue)
+        const baseRent = b.rentCost ?? (rev * 0.07);
+        rentExpenses += baseRent;
 
-        // Equipment wear / maintenance budget
+        // Equipment wear / maintenance budget (only if condition degraded below 80%)
         if ((b.maintenanceCondition ?? 100) < 80) {
-          maintenanceExpenses += (b.baseCost * 0.0005) * b.level;
+          maintenanceExpenses += rev * 0.03;
         }
       }
     });
@@ -189,8 +189,8 @@ export function useGameEngine() {
       const occupancy = re.occupancyRate ?? 0.95;
       const income = re.monthlyIncome * re.ownedCount * occupancy;
       grossRevenue += income;
-      // Property tax & upkeep
-      const taxAndUpkeep = (re.cost * (re.propertyTaxRate ?? 0.015) / 12) * re.ownedCount;
+      // Property tax & upkeep (proportional to monthly income)
+      const taxAndUpkeep = (re.monthlyIncome * 0.15) * re.ownedCount;
       rentExpenses += taxAndUpkeep;
     });
 
@@ -223,8 +223,8 @@ export function useGameEngine() {
     if (hasLogistics) opsEfficiencyDiscount *= 0.9;
     opsEfficiencyDiscount = Math.max(0.7, opsEfficiencyDiscount);
 
-    // Base overhead operational expenses (20% of Gross Revenue)
-    const baseOpCost = grossRevenue * 0.20 * opsEfficiencyDiscount;
+    // Base overhead operational expenses (10% of Gross Revenue)
+    const baseOpCost = grossRevenue * 0.10 * opsEfficiencyDiscount;
     const totalExpenses = cogsExpenses + employeeExpenses + rentExpenses + maintenanceExpenses + marketingExpenses + loanPayments + baseOpCost;
 
     // Progressive Corporate Tax (7% micro, 15% medium, 22% enterprise)
