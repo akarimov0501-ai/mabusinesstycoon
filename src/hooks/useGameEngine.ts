@@ -172,6 +172,25 @@ export function useGameEngine() {
     const hasLogistics = s.research.find((r) => r.id === 'logistics_grid')?.isResearched;
     const hasTaxOpt = s.research.find((r) => r.id === 'tax_optimization')?.isResearched;
 
+    // Enacted Lobbying Policy Discounts
+    let lobbyTaxDiscount = 0;
+    let lobbyCogsDiscount = 0;
+    let lobbyLoanRateDiscount = 0;
+    (s.lobbyingPolicies || []).forEach((pol) => {
+      if (pol.status === 'enacted') {
+        if (pol.taxDiscount) lobbyTaxDiscount += pol.taxDiscount;
+        if (pol.cogsDiscount) lobbyCogsDiscount += pol.cogsDiscount;
+        if (pol.loanRateDiscount) lobbyLoanRateDiscount += pol.loanRateDiscount;
+      }
+    });
+
+    // Political Office Perks
+    const currentOffice = s.currentOffice || 'Citizen';
+    const isMayor = currentOffice === 'Mayor' || currentOffice === 'Governor' || currentOffice === 'Minister' || currentOffice === 'President';
+    const isGovernor = currentOffice === 'Governor' || currentOffice === 'Minister' || currentOffice === 'President';
+    const isMinister = currentOffice === 'Minister' || currentOffice === 'President';
+    const isPresident = currentOffice === 'President';
+
     // Employee department multipliers
     const mgrCount = s.employees.find((e) => e.id === 'management')?.count || 0;
     const salesCount = s.employees.find((e) => e.id === 'sales')?.count || 0;
@@ -318,6 +337,22 @@ export function useGameEngine() {
       employeeExpenses += sal;
     });
     employeeExpenses += (s.ceoSalaryPerSec || 0);
+    // Active Government Procurement Contracts Revenue (BEFORE expenses/tax)
+    (s.govtContracts || []).forEach((gc) => {
+      if (gc.active) {
+        grossRevenue += gc.revenuePerSec;
+      }
+    });
+
+    // Apply Lobbying COGS Discount (e.g. Eco Exemption Bill -10% COGS)
+    if (lobbyCogsDiscount > 0) {
+      cogsExpenses *= Math.max(0.5, 1 - lobbyCogsDiscount);
+    }
+
+    // Mayor Perk: -10% Rent Expenses
+    if (isMayor) {
+      rentExpenses *= 0.90;
+    }
 
     // Bank Loan servicing payments
     let loanPayments = 0;
@@ -330,7 +365,9 @@ export function useGameEngine() {
     // Operations department & Logistics discount on base operational costs
     let opsEfficiencyDiscount = 1 - opsCount * 0.015;
     if (hasLogistics) opsEfficiencyDiscount *= 0.9;
-    opsEfficiencyDiscount = Math.max(0.7, opsEfficiencyDiscount);
+    // Governor Perk: -15% Operational Expenses
+    if (isGovernor) opsEfficiencyDiscount *= 0.85;
+    opsEfficiencyDiscount = Math.max(0.5, opsEfficiencyDiscount);
 
     // Base overhead operational expenses (10% of Gross Revenue)
     const baseOpCost = grossRevenue * 0.10 * opsEfficiencyDiscount;
@@ -340,6 +377,12 @@ export function useGameEngine() {
     const hqCountry = s.countries.find((c) => c.headquarters) || s.countries[0];
     let baseTaxRate = hqCountry ? hqCountry.taxRate : 0.15;
     if (hasTaxOpt) baseTaxRate = Math.max(0.04, baseTaxRate - 0.05);
+    // Lobbying Tax Relief discount
+    if (lobbyTaxDiscount > 0) baseTaxRate = Math.max(0.04, baseTaxRate - lobbyTaxDiscount);
+    // Minister Perk: -5% Tax Rate
+    if (isMinister) baseTaxRate = Math.max(0.04, baseTaxRate - 0.05);
+    // President Perk: Offshore Tax Haven (min 4%)
+    if (isPresident) baseTaxRate = Math.max(0.04, Math.min(baseTaxRate, 0.06));
 
     const taxableIncome = Math.max(0, grossRevenue - totalExpenses);
     let taxes = 0;
@@ -356,13 +399,6 @@ export function useGameEngine() {
     // Cap overall net profit margin to never exceed 30% (max 25-30% range)
     const maxProfitCap = grossRevenue * 0.28;
     const netProfitPerSec = grossRevenue > 0 && rawNetProfit > maxProfitCap ? maxProfitCap : rawNetProfit;
-
-    // Active Government Procurement Contracts Revenue
-    (s.govtContracts || []).forEach((gc) => {
-      if (gc.active) {
-        grossRevenue += gc.revenuePerSec;
-      }
-    });
 
     // Asset Net worth calculation
     let assetValue = s.cash + (s.personalCash || 0);
