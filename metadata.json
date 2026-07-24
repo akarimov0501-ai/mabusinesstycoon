@@ -1,0 +1,6 @@
+{
+  "name": "Business Empire Tycoon",
+  "description": "Build a global 2D business empire from scratch with businesses, investments, research, world expansion, competitors, and economy management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
