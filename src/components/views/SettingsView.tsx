@@ -47,25 +47,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-4 sm:p-6 space-y-3.5 shadow-lg">
           <h3 className="font-bold text-sm sm:text-base text-white flex items-center gap-2">
-            <Save className="w-5 h-5 text-emerald-400 shrink-0" /> O'yinni Saqlash & Zaxiralash
+            <Save className="w-5 h-5 text-emerald-400 shrink-0" /> Avtomatik Saqlash (Auto-Save)
           </h3>
           <p className="text-xs text-slate-400">
-            Avtomatik saqlash har 10 soniyada amalga oshiriladi. Shuningdek, saqlash tugmasi orqali yuklab olishingiz mumkin.
+            Barcha erishgan natijalaringiz va har bir o'zgarishingiz brauzer xotirasiga darhol avtomatik saqlanadi. Sahifa yangilansa ham ma'lumotlaringiz yo'qolmaydi.
           </p>
 
           <div className="flex flex-col gap-2">
-            <button
-              onClick={onManualSave}
-              className="py-2.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
-            >
-              <Save className="w-4 h-4 shrink-0" /> Hozir Saqlash
-            </button>
+            <div className="py-2.5 px-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold text-xs flex items-center justify-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Avtomatik Saqlash Faol (100% Xavfsiz)
+            </div>
 
             <button
               onClick={onExportSave}
               className="py-2.5 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-2 border border-slate-700 transition-colors cursor-pointer"
             >
-              <Download className="w-4 h-4 text-cyan-400 shrink-0" /> JSON Fayl Sifatida Yuklab Olish
+              <Download className="w-4 h-4 text-cyan-400 shrink-0" /> JSON Fayl Sifatida Zaxiralash
             </button>
           </div>
         </div>

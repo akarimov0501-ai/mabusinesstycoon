@@ -22,7 +22,7 @@ interface HeaderProps {
   financials: DetailedFinancials;
   onToggleSound: () => void;
   onSetGameSpeed: (speed: number) => void;
-  onSave: () => void;
+  onSave?: () => void;
   onOpenMobileMenu: () => void;
   onToggleCurrency?: () => void;
   onOpenFinancialReport?: () => void;
@@ -33,7 +33,6 @@ export const Header: React.FC<HeaderProps> = ({
   financials,
   onToggleSound,
   onSetGameSpeed,
-  onSave,
   onOpenMobileMenu,
   onToggleCurrency,
   onOpenFinancialReport,
@@ -227,16 +226,6 @@ export const Header: React.FC<HeaderProps> = ({
             title={state.soundEnabled ? 'Mute Audio' : 'Unmute Audio'}
           >
             {state.soundEnabled ? <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" /> : <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500" />}
-          </button>
-
-          {/* Quick Save */}
-          <button
-            onClick={onSave}
-            className="p-1.5 sm:p-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium transition-colors flex items-center gap-1 shadow-sm shadow-emerald-600/30 text-xs md:text-sm"
-            title="O'yinni saqlash"
-          >
-            <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="hidden lg:inline">Saqlash</span>
           </button>
         </div>
       </div>

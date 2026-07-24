@@ -468,13 +468,47 @@ export function useGameEngine() {
     return () => clearInterval(eventTimer);
   }, [activeEvent]);
 
-  // Auto Save every 10 seconds
+  // Keep stateRef in sync for page exit handlers
+  const stateRef = useRef(state);
   useEffect(() => {
-    const saveTimer = setInterval(() => {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-    }, 10000);
-    return () => clearInterval(saveTimer);
+    stateRef.current = state;
   }, [state]);
+
+  // Instant Auto-Save on every state change to browser localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.error('Failed to auto-save game state to localStorage:', e);
+    }
+  }, [state]);
+
+  // Guaranteed Auto-Save on page exit / refresh / unload / visibility change
+  useEffect(() => {
+    const handleSaveOnExit = () => {
+      try {
+        const stateToSave = { ...stateRef.current, lastTickTime: Date.now() };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(stateToSave));
+      } catch (e) {
+        console.error('Error saving state on exit:', e);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleSaveOnExit);
+    window.addEventListener('pagehide', handleSaveOnExit);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        handleSaveOnExit();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleSaveOnExit);
+      window.removeEventListener('pagehide', handleSaveOnExit);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   // Offline earnings calculation on mount
   useEffect(() => {

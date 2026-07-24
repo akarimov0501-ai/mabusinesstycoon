@@ -94,7 +94,6 @@ export default function App() {
             financials={financials}
             onToggleSound={toggleSound}
             onSetGameSpeed={setGameSpeed}
-            onSave={manualSave}
             onOpenMobileMenu={() => setMobileMenuOpen(true)}
             onToggleCurrency={toggleCurrency}
             onOpenFinancialReport={() => setShowFinancialReport(true)}
