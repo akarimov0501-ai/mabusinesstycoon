@@ -31,6 +31,7 @@ interface DashboardViewProps {
     effectiveTax: number;
   };
   onTap: () => void;
+  onUpgradeClicker: () => void;
   onNavigate: (tab: any) => void;
 }
 
@@ -38,6 +39,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   state,
   financials,
   onTap,
+  onUpgradeClicker,
   onNavigate,
 }) => {
   const activeBusinessesCount = state.businesses.filter((b) => b.level > 0).length;
@@ -45,10 +47,37 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const totalEmployeesCount = state.employees.reduce((acc, e) => acc + e.count, 0);
   const currency = state.currency || 'USD';
 
-  // Mini-game states: Omad g'ildiragi (Lucky Wheel) & VIP Muzokara
+  // Mini-game states: Omad g'ildiragi & VIP Muzokara
   const [spinMsg, setSpinMsg] = useState<string | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [dealStatus, setDealStatus] = useState<string | null>(null);
+
+  // Floating particles state for Clicker
+  const [clickParticles, setClickParticles] = useState<{ id: number; x: number; y: number; text: string }[]>([]);
+
+  const handleTapWithEffect = (e: React.MouseEvent<HTMLButtonElement>) => {
+    onTap();
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const newParticle = {
+      id: Date.now() + Math.random(),
+      x,
+      y,
+      text: `+${formatMoney(state.tapEarnings, currency)}`,
+    };
+
+    setClickParticles((prev) => [...prev.slice(-8), newParticle]);
+
+    setTimeout(() => {
+      setClickParticles((prev) => prev.filter((p) => p.id !== newParticle.id));
+    }, 800);
+  };
+
+  const clickerLvl = state.clickerLevel || 1;
+  const clickerUpgradeCost = Math.floor(25 * Math.pow(2.2, clickerLvl - 1));
+  const canUpgradeClicker = state.cash >= clickerUpgradeCost;
 
   const handleSpinWheel = () => {
     if (isSpinning) return;
@@ -136,22 +165,52 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </p>
           </div>
 
-          <div className="mt-6 flex flex-wrap items-center gap-4 relative z-10">
+          <div className="mt-6 flex flex-wrap items-center gap-3 relative z-10">
+            {/* Interactive Tap Button */}
+            <div className="relative">
+              <button
+                id="tap-booster-btn"
+                onClick={handleTapWithEffect}
+                className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black text-sm flex items-center gap-2.5 shadow-xl shadow-amber-500/25 active:scale-90 transition-all cursor-pointer select-none"
+              >
+                <Zap className="w-5 h-5 fill-slate-950 animate-pulse" />
+                <span>KLIKKER BOOST (+{formatMoney(state.tapEarnings, currency)})</span>
+              </button>
+
+              {/* Floating particles */}
+              {clickParticles.map((p) => (
+                <div
+                  key={p.id}
+                  style={{ left: `${p.x}px`, top: `${p.y - 20}px` }}
+                  className="absolute pointer-events-none text-xs font-black text-amber-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] animate-bounce transition-all"
+                >
+                  {p.text}
+                </div>
+              ))}
+            </div>
+
+            {/* Upgrade Clicker Button */}
             <button
-              id="tap-booster-btn"
-              onClick={onTap}
-              className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm flex items-center gap-2.5 shadow-lg shadow-amber-500/25 active:scale-95 transition-all cursor-pointer"
+              onClick={onUpgradeClicker}
+              disabled={!canUpgradeClicker}
+              className={`px-5 py-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${
+                canUpgradeClicker
+                  ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/40 shadow-lg shadow-emerald-500/10 active:scale-95'
+                  : 'bg-slate-800/40 text-slate-500 border-slate-700/40 opacity-60 cursor-not-allowed'
+              }`}
             >
-              <CupSoda className="w-5 h-5" />
-              <span>Salqin Ichimliklar Boost (+{formatMoney(state.tapEarnings)})</span>
+              <TrendingUp className="w-4 h-4 text-emerald-400" />
+              <span>
+                Klikker Lvl {clickerLvl} ➔ {clickerLvl + 1} ({formatMoney(clickerUpgradeCost, currency)})
+              </span>
             </button>
 
             <button
               onClick={() => onNavigate('businesses')}
-              className="px-5 py-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold text-sm flex items-center gap-2 border border-slate-700/60 transition-colors"
+              className="px-4 py-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold text-xs flex items-center gap-2 border border-slate-700/60 transition-colors"
             >
               <Building2 className="w-4 h-4 text-emerald-400" />
-              <span>Bizneslarni Boshqarish</span>
+              <span>Bizneslar</span>
             </button>
           </div>
         </div>

@@ -32,6 +32,7 @@ export default function App() {
     notification,
     closeOfflineModal,
     handleTap,
+    upgradeClicker,
     buyBusiness,
     hireManager,
     unlockCountry,
@@ -102,6 +103,7 @@ export default function App() {
                 state={state}
                 financials={financials}
                 onTap={handleTap}
+                onUpgradeClicker={upgradeClicker}
                 onNavigate={setActiveTab}
               />
             )}

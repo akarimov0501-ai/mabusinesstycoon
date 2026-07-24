@@ -417,6 +417,12 @@ export function useGameEngine() {
         updatedHistory = [...prev.history.slice(-20), newPoint];
       }
 
+      const clickerLvl = prev.clickerLevel || 1;
+      const baseTap = Math.floor(1 * Math.pow(1.8, clickerLvl - 1));
+      const passiveBonus = fin.grossRevenue * 0.02 * clickerLvl;
+      const netWorthBonus = (fin.netWorth || 0) * 0.0001 * clickerLvl;
+      const currentTapVal = Math.max(1, Math.round(baseTap + passiveBonus + netWorthBonus));
+
       return {
         ...prev,
         cash: newCash,
@@ -437,6 +443,7 @@ export function useGameEngine() {
         competitors: updatedCompetitors,
         achievements: updatedAchievements,
         history: updatedHistory,
+        tapEarnings: currentTapVal,
       };
     });
   }, [calculateFinancials, showNotification]);
@@ -496,20 +503,48 @@ export function useGameEngine() {
     }
   }, [calculateFinancials]);
 
-  // Tap lemonade booster
+  // Tap booster with dynamic scaling & clicker upgrades
   const handleTap = useCallback(() => {
     sounds.playClick();
     setState((prev) => {
-      const lemLevel = prev.businesses.find((b) => b.id === 'lemonade_stand')?.level || 1;
-      const tapVal = Math.max(1, 0.5 + lemLevel * 0.25);
+      const fin = calculateFinancials(prev);
+      const level = prev.clickerLevel || 1;
+      const baseTap = Math.floor(1 * Math.pow(1.8, level - 1));
+      const passiveBonus = fin.grossRevenue * 0.02 * level;
+      const netWorthBonus = (prev.netWorth || 0) * 0.0001 * level;
+      const tapVal = Math.max(1, Math.round(baseTap + passiveBonus + netWorthBonus));
+
       return {
         ...prev,
         cash: prev.cash + tapVal,
         totalEarned: prev.totalEarned + tapVal,
         totalTaps: prev.totalTaps + 1,
+        tapEarnings: tapVal,
       };
     });
-  }, []);
+  }, [calculateFinancials]);
+
+  // Upgrade Clicker Power Level
+  const upgradeClicker = useCallback(() => {
+    setState((prev) => {
+      const currentLevel = prev.clickerLevel || 1;
+      const cost = Math.floor(25 * Math.pow(2.2, currentLevel - 1));
+      if (prev.cash < cost) {
+        showNotification('Not enough cash to upgrade clicker!');
+        return prev;
+      }
+
+      sounds.playCash();
+      const nextLevel = currentLevel + 1;
+      showNotification(`Upgraded Clicker Power to Level ${nextLevel}!`);
+
+      return {
+        ...prev,
+        cash: prev.cash - cost,
+        clickerLevel: nextLevel,
+      };
+    });
+  }, [showNotification]);
 
   // Buy or Upgrade Business
   const buyBusiness = useCallback((bizId: string) => {
@@ -1064,6 +1099,7 @@ export function useGameEngine() {
     notification,
     closeOfflineModal: () => setOfflineEarnings(null),
     handleTap,
+    upgradeClicker,
     buyBusiness,
     hireManager,
     unlockCountry,

@@ -958,6 +958,7 @@ export const initialGameState: GameState = {
     { time: '0s', cash: 100, netWorth: 100, revenue: 1, expenses: 0 },
   ],
 
+  clickerLevel: 1,
   tapEarnings: 1,
   totalTaps: 0,
   totalBusinessesOwned: 1,

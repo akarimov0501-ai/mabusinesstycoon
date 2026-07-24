@@ -271,7 +271,8 @@ export interface GameState {
   achievements: Achievement[];
   history: HistoryDataPoint[];
 
-  // Statistics
+  // Statistics & Clicker
+  clickerLevel: number;
   tapEarnings: number;
   totalTaps: number;
   totalBusinessesOwned: number;
