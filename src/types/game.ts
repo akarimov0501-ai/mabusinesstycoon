@@ -40,6 +40,17 @@ export interface BusinessBranch {
   count: number;
 }
 
+export interface DeepManagementConfig {
+  unitPrice?: number;
+  priceMultiplier?: number;
+  componentQuality?: 'basic' | 'standard' | 'high_end' | 'ultra';
+  targetMarket?: 'mass' | 'middle' | 'niche';
+  productionSpeed?: number;
+  maxProfitMarginPercent?: number; // Capped at max 25-30%
+  modelTier?: 'small_7b' | 'enterprise_70b' | 'frontier_400b' | 'agi_super';
+  gpuArchTier?: 'mobile_gpu' | 'workstation_gpu' | 'datacenter_tensor' | 'quantum_optics';
+}
+
 export interface Business {
   id: string;
   name: string;
@@ -61,6 +72,7 @@ export interface Business {
   cogsPercent?: number; // e.g. 0.35 = 35% cost of goods sold
   maintenanceCondition?: number; // 0 to 100%
   rentCost?: number; // per sec base rent
+  deepConfig?: DeepManagementConfig;
 }
 
 export interface Country {

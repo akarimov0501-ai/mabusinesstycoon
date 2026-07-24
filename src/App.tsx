@@ -18,12 +18,15 @@ import { SettingsView } from './components/views/SettingsView';
 import { EventModal } from './components/modals/EventModal';
 import { OfflineModal } from './components/modals/OfflineModal';
 import { FinancialReportModal } from './components/modals/FinancialReportModal';
+import { DeepManagementModal } from './components/modals/DeepManagementModal';
+import { Business } from './types/game';
 import { CheckCircle2 } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<NavigationTab>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showFinancialReport, setShowFinancialReport] = useState(false);
+  const [deepBizModal, setDeepBizModal] = useState<Business | null>(null);
 
   const {
     state,
@@ -56,6 +59,7 @@ export default function App() {
     takeLoan,
     repayLoan,
     maintainBusiness,
+    updateBusinessDeepConfig,
     buyRealEstateWithMortgage,
     toggleCurrency,
     manualSave,
@@ -123,6 +127,7 @@ export default function App() {
                 onBuyBusiness={buyBusiness}
                 onHireManager={hireManager}
                 onMaintainBusiness={maintainBusiness}
+                onOpenDeepManagement={(biz) => setDeepBizModal(biz)}
               />
             )}
 
@@ -241,6 +246,19 @@ export default function App() {
           state={state}
           financials={financials}
           onClose={() => setShowFinancialReport(false)}
+        />
+      )}
+
+      {/* Deep Management & Pricing Modal */}
+      {deepBizModal && (
+        <DeepManagementModal
+          business={deepBizModal}
+          currency={state.currency}
+          onClose={() => setDeepBizModal(null)}
+          onSaveConfig={(bizId, config) => {
+            updateBusinessDeepConfig(bizId, config);
+            setDeepBizModal(null);
+          }}
         />
       )}
     </div>

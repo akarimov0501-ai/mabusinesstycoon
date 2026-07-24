@@ -37,13 +37,17 @@ import {
   UserCheck,
   Plus,
   Lock,
+  Wrench,
+  SlidersHorizontal,
 } from 'lucide-react';
+import { Business } from '../../types/game';
 
 interface BusinessesViewProps {
   state: GameState;
   onBuyBusiness: (id: string) => void;
   onHireManager: (id: string) => void;
   onMaintainBusiness?: (id: string) => void;
+  onOpenDeepManagement?: (biz: Business) => void;
 }
 
 const CATEGORIES: (BusinessCategory | 'All')[] = [
@@ -79,6 +83,7 @@ export const BusinessesView: React.FC<BusinessesViewProps> = ({
   onBuyBusiness,
   onHireManager,
   onMaintainBusiness,
+  onOpenDeepManagement,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<BusinessCategory | 'All'>('All');
   const currency = state.currency || 'USD';
@@ -253,60 +258,84 @@ export const BusinessesView: React.FC<BusinessesViewProps> = ({
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="space-y-2 pt-1">
+              {/* Action Buttons (2 Cells per row layout with icons only) */}
+              <div className="pt-1">
                 {!isUnlocked ? (
                   <div className="p-3 rounded-2xl bg-slate-800/50 text-slate-400 text-xs flex items-center justify-center gap-2 border border-slate-800 text-center">
                     <Lock className="w-4 h-4 text-slate-500 shrink-0" />
                     <span>Talab: {formatMoney(biz.requiredNetWorth, currency)}</span>
                   </div>
                 ) : (
-                  <>
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Cell 1: Buy / Upgrade */}
                     <button
                       onClick={() => onBuyBusiness(biz.id)}
                       disabled={!canAffordUpgrade}
-                      className={`w-full py-2.5 px-3 rounded-2xl font-bold text-xs flex flex-wrap items-center justify-between gap-1 transition-all cursor-pointer ${
+                      title={biz.level === 0 ? 'Sotib Olish' : 'Darajani Oshirish'}
+                      className={`p-2.5 rounded-2xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer border ${
                         canAffordUpgrade
-                          ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20'
-                          : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
+                          ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-emerald-400 shadow-md shadow-emerald-500/20'
+                          : 'bg-slate-800/60 text-slate-500 border-slate-700/50 cursor-not-allowed'
                       }`}
                     >
-                      <span className="flex items-center gap-1">
-                        <Plus className="w-4 h-4" />
-                        {biz.level === 0 ? 'Sotib Olish' : 'Darajani Oshirish'}
-                      </span>
-                      <span className="ml-auto">{formatMoney(upgradeCost, currency)}</span>
+                      <Plus className="w-4 h-4 shrink-0" />
+                      <span className="text-[11px] font-black tracking-tight">{formatMoney(upgradeCost, currency)}</span>
                     </button>
 
-                    {biz.level > 0 && condition < 100 && onMaintainBusiness && (
+                    {/* Cell 2: Hire Manager */}
+                    <button
+                      onClick={() => !biz.hasManager && onHireManager(biz.id)}
+                      disabled={biz.hasManager || !canAffordManager}
+                      title={biz.hasManager ? 'Menejer Tayinlangan' : 'Menejer Yollash'}
+                      className={`p-2.5 rounded-2xl font-bold text-xs flex items-center justify-between transition-all border ${
+                        biz.hasManager
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 cursor-default'
+                          : canAffordManager
+                          ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40 cursor-pointer'
+                          : 'bg-slate-800/40 text-slate-600 border-slate-800 cursor-not-allowed'
+                      }`}
+                    >
+                      <UserCheck className="w-4 h-4 shrink-0" />
+                      <span className="text-[11px] font-bold">
+                        {biz.hasManager ? 'OK' : formatMoney(biz.managerCost, currency)}
+                      </span>
+                    </button>
+
+                    {/* Cell 3: Ta'mirlash (Maintenance) */}
+                    {biz.level > 0 && onMaintainBusiness && (
                       <button
-                        onClick={() => onMaintainBusiness(biz.id)}
-                        disabled={state.cash < repairCost}
-                        className="w-full py-1.5 px-3 rounded-xl font-bold text-[11px] bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 flex flex-wrap items-center justify-between gap-1 transition"
+                        onClick={() => condition < 100 && onMaintainBusiness(biz.id)}
+                        disabled={condition >= 100 || state.cash < repairCost}
+                        title="Ta'mirlash (100% Holat)"
+                        className={`p-2.5 rounded-2xl font-bold text-xs flex items-center justify-between transition-all border ${
+                          condition >= 100
+                            ? 'bg-blue-500/10 text-blue-400 border-blue-500/20 cursor-default'
+                            : state.cash >= repairCost
+                            ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border-blue-500/30 cursor-pointer'
+                            : 'bg-slate-800/40 text-slate-600 border-slate-800 cursor-not-allowed'
+                        }`}
                       >
-                        <span>🔧 Ta'mirlash (100%)</span>
-                        <span className="ml-auto">{formatMoney(repairCost, currency)}</span>
+                        <Wrench className="w-4 h-4 shrink-0" />
+                        <span className="text-[11px] font-bold">
+                          {condition >= 100 ? '100%' : formatMoney(repairCost, currency)}
+                        </span>
                       </button>
                     )}
 
-                    {biz.level > 0 && !biz.hasManager && (
+                    {/* Cell 4: Chuqurlashish (Deep Management Settings) */}
+                    {biz.level > 0 && onOpenDeepManagement && (
                       <button
-                        onClick={() => onHireManager(biz.id)}
-                        disabled={!canAffordManager}
-                        className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex flex-wrap items-center justify-between gap-1 transition-all cursor-pointer ${
-                          canAffordManager
-                            ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40'
-                            : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
-                        }`}
+                        onClick={() => onOpenDeepManagement(biz)}
+                        title="Chuqurlashish (Batafsil sozlamalar va narx)"
+                        className="p-2.5 rounded-2xl font-bold text-xs flex items-center justify-between bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 transition cursor-pointer"
                       >
-                        <span className="flex items-center gap-1">
-                          <UserCheck className="w-3.5 h-3.5" />
-                          Menejer Yollash
+                        <SlidersHorizontal className="w-4 h-4 shrink-0 text-purple-400" />
+                        <span className="text-[11px] font-bold">
+                          {biz.deepConfig?.unitPrice ? `$${biz.deepConfig.unitPrice}` : 'Sozlash'}
                         </span>
-                        <span className="ml-auto">{formatMoney(biz.managerCost, currency)}</span>
                       </button>
                     )}
-                  </>
+                  </div>
                 )}
               </div>
             </div>

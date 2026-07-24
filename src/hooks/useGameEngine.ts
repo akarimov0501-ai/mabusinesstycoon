@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { GameState, GameEvent, DetailedFinancials, BankLoan } from '../types/game';
+import { GameState, GameEvent, DetailedFinancials, BankLoan, DeepManagementConfig } from '../types/game';
 import { initialGameState } from '../data/initialState';
 import { randomEvents } from '../data/events';
 import { sounds } from '../utils/sound';
@@ -23,12 +23,16 @@ export function useGameEngine() {
             };
           });
 
-          const updatedBusinesses = (parsed.businesses || initialGameState.businesses).map((b: any) => {
-            const defaultBiz = initialGameState.businesses.find((initB) => initB.id === b.id);
+          const existingBizMap = new Map<string, any>((parsed.businesses || []).map((b: any) => [b.id, b]));
+          const updatedBusinesses = initialGameState.businesses.map((defaultBiz) => {
+            const savedBiz: any = existingBizMap.get(defaultBiz.id);
+            if (!savedBiz) return defaultBiz;
             return {
-              ...b,
-              baseRevenue: defaultBiz ? defaultBiz.baseRevenue : b.baseRevenue,
-              baseCost: defaultBiz ? defaultBiz.baseCost : b.baseCost,
+              ...defaultBiz,
+              ...savedBiz,
+              baseRevenue: defaultBiz.baseRevenue,
+              baseCost: defaultBiz.baseCost,
+              deepConfig: savedBiz.deepConfig || defaultBiz.deepConfig,
             };
           });
 
@@ -190,16 +194,72 @@ export function useGameEngine() {
         });
         branchDemand = Math.min(2.5, branchDemand);
 
+        // Deep Management Multipliers (pricing & quality)
+        let deepPriceMult = 1.0;
+        let deepQualityMult = 1.0;
+        let deepCogsRate = b.cogsPercent ?? 0.25;
+
+        if (b.deepConfig) {
+          deepPriceMult = b.deepConfig.priceMultiplier ?? 1.0;
+          if (b.deepConfig.componentQuality === 'ultra') {
+            deepQualityMult = 1.3;
+            deepCogsRate = 0.38;
+          } else if (b.deepConfig.componentQuality === 'high_end') {
+            deepQualityMult = 1.15;
+            deepCogsRate = 0.30;
+          } else if (b.deepConfig.componentQuality === 'basic') {
+            deepQualityMult = 0.85;
+            deepCogsRate = 0.18;
+          } else {
+            deepCogsRate = 0.25;
+          }
+
+          // AI Model Tier Multipliers
+          if (b.deepConfig.modelTier) {
+            if (b.deepConfig.modelTier === 'agi_super') {
+              deepQualityMult *= 1.6;
+              deepCogsRate = 0.40;
+            } else if (b.deepConfig.modelTier === 'frontier_400b') {
+              deepQualityMult *= 1.35;
+              deepCogsRate = 0.32;
+            } else if (b.deepConfig.modelTier === 'small_7b') {
+              deepQualityMult *= 0.85;
+              deepCogsRate = 0.18;
+            }
+          }
+
+          // GPU Architecture Tier Multipliers
+          if (b.deepConfig.gpuArchTier) {
+            if (b.deepConfig.gpuArchTier === 'quantum_optics') {
+              deepQualityMult *= 1.65;
+              deepCogsRate = 0.42;
+            } else if (b.deepConfig.gpuArchTier === 'datacenter_tensor') {
+              deepQualityMult *= 1.35;
+              deepCogsRate = 0.32;
+            } else if (b.deepConfig.gpuArchTier === 'mobile_gpu') {
+              deepQualityMult *= 0.85;
+              deepCogsRate = 0.18;
+            }
+          }
+
+          if (b.deepConfig.targetMarket === 'niche') {
+            deepQualityMult *= 0.85;
+            deepPriceMult *= 1.15;
+          } else if (b.deepConfig.targetMarket === 'mass') {
+            deepQualityMult *= 1.15;
+          }
+        }
+
         rev *= branchDemand;
         rev *= execBoost;
         rev *= mktMultiplier;
         rev *= rdGlobalBoost;
+        rev *= deepPriceMult * deepQualityMult;
 
         grossRevenue += rev;
 
-        // COGS (Cost of Goods Sold: ~25% of gross business revenue)
-        const cogsRate = b.cogsPercent ?? 0.25;
-        cogsExpenses += rev * cogsRate;
+        // COGS (Cost of Goods Sold)
+        cogsExpenses += rev * deepCogsRate;
 
         // Rent / Facility expenses (~7% of gross business revenue)
         const baseRent = b.rentCost ?? (rev * 0.07);
@@ -271,7 +331,10 @@ export function useGameEngine() {
     }
 
     const effectiveTax = taxableIncome > 0 ? taxes / taxableIncome : baseTaxRate;
-    const netProfitPerSec = grossRevenue - totalExpenses - taxes;
+    const rawNetProfit = grossRevenue - totalExpenses - taxes;
+    // Cap overall net profit margin to never exceed 30% (max 25-30% range)
+    const maxProfitCap = grossRevenue * 0.28;
+    const netProfitPerSec = grossRevenue > 0 && rawNetProfit > maxProfitCap ? maxProfitCap : rawNetProfit;
 
     // Asset Net worth calculation
     let assetValue = s.cash;
@@ -1204,6 +1267,25 @@ export function useGameEngine() {
     }));
   }, []);
 
+  const updateBusinessDeepConfig = useCallback((businessId: string, deepConfig: DeepManagementConfig) => {
+    setState((prev) => ({
+      ...prev,
+      businesses: prev.businesses.map((b) => {
+        if (b.id === businessId) {
+          return {
+            ...b,
+            deepConfig: {
+              ...b.deepConfig,
+              ...deepConfig,
+            },
+          };
+        }
+        return b;
+      }),
+    }));
+    sounds.playClick();
+  }, []);
+
   const exportSave = useCallback(() => {
     const jsonStr = JSON.stringify(state, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -1264,6 +1346,7 @@ export function useGameEngine() {
     takeLoan,
     repayLoan,
     maintainBusiness,
+    updateBusinessDeepConfig,
     buyRealEstateWithMortgage,
     toggleCurrency,
     manualSave,
