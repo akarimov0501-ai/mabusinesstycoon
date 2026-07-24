@@ -72,6 +72,14 @@ export function useGameEngine() {
             sanitizedCash = Math.max(1000, Math.min(sanitizedCash, totalAssetsValue * 2 + 50000));
           }
 
+          const updatedRdProjects = (parsed.rdProjects || initialGameState.rdProjects).map((proj: any) => {
+            const defaultProj = initialGameState.rdProjects.find((p) => p.id === proj.id);
+            return {
+              ...defaultProj,
+              ...proj,
+            };
+          });
+
           return {
             ...initialGameState,
             ...parsed,
@@ -79,6 +87,7 @@ export function useGameEngine() {
             businesses: updatedBusinesses,
             realEstate: updatedRealEstate,
             employees: updatedEmployees,
+            rdProjects: updatedRdProjects,
             lastTickTime: Date.now(),
           };
         } catch {
@@ -112,8 +121,25 @@ export function useGameEngine() {
     let rentExpenses = 0;
     let maintenanceExpenses = 0;
     let marketingExpenses = 0;
+    let rdExpenses = 0;
     let employeeExpenses = 0;
     let stockDividendRevenue = 0;
+    let rdRoyaltyRevenue = 0;
+    let rdCompanyBoostSum = 0;
+
+    // Calculate R&D Project Expenses & Royalties
+    (s.rdProjects || []).forEach((proj) => {
+      const isUnlocked = proj.unlocked || s.netWorth >= proj.requiredNetWorth;
+      if (isUnlocked && proj.allocatedBudgetPerSec > 0) {
+        rdExpenses += proj.allocatedBudgetPerSec;
+      }
+      if (proj.level > 0) {
+        rdRoyaltyRevenue += proj.royaltyRevenuePerSec;
+        rdCompanyBoostSum += proj.companyBoostPercent;
+      }
+    });
+
+    grossRevenue += rdRoyaltyRevenue;
 
     // Researched Tech perks flags
     const hasAI = s.research.find((r) => r.id === 'ai_optimization')?.isResearched;
@@ -129,6 +155,7 @@ export function useGameEngine() {
 
     // Executive boost (capped at 2.5x max)
     const execBoost = Math.min(2.5, 1 + mgrCount * 0.02 + salesCount * 0.015);
+    const rdGlobalBoost = 1 + rdCompanyBoostSum / 100;
 
     // Active marketing multiplier
     let mktBoost = 0;
@@ -166,6 +193,7 @@ export function useGameEngine() {
         rev *= branchDemand;
         rev *= execBoost;
         rev *= mktMultiplier;
+        rev *= rdGlobalBoost;
 
         grossRevenue += rev;
 
@@ -225,7 +253,7 @@ export function useGameEngine() {
 
     // Base overhead operational expenses (10% of Gross Revenue)
     const baseOpCost = grossRevenue * 0.10 * opsEfficiencyDiscount;
-    const totalExpenses = cogsExpenses + employeeExpenses + rentExpenses + maintenanceExpenses + marketingExpenses + loanPayments + baseOpCost;
+    const totalExpenses = cogsExpenses + employeeExpenses + rentExpenses + maintenanceExpenses + marketingExpenses + rdExpenses + loanPayments + baseOpCost;
 
     // Progressive Corporate Tax (7% micro, 15% medium, 22% enterprise)
     const hqCountry = s.countries.find((c) => c.headquarters) || s.countries[0];
@@ -269,6 +297,7 @@ export function useGameEngine() {
       rentExpenses,
       maintenanceExpenses,
       marketingExpenses,
+      rdExpenses,
       loanPayments,
       baseOpCost,
       totalExpenses,
@@ -278,6 +307,7 @@ export function useGameEngine() {
       netWorth: Math.max(0, assetValue),
       totalDebt,
       stockDividendRevenue,
+      rdRoyaltyRevenue,
     };
   }, []);
 
@@ -417,6 +447,63 @@ export function useGameEngine() {
         updatedHistory = [...prev.history.slice(-20), newPoint];
       }
 
+      // Update R&D Projects Experience & Level Ups based on allocated budget
+      const updatedRdProjects = (prev.rdProjects || initialGameState.rdProjects).map((proj) => {
+        const isUnlocked = proj.unlocked || fin.netWorth >= proj.requiredNetWorth;
+        if (!isUnlocked || proj.allocatedBudgetPerSec <= 0) {
+          return { ...proj, unlocked: isUnlocked };
+        }
+
+        const deltaExp = proj.allocatedBudgetPerSec * deltaSec;
+        let newExp = proj.accumulatedExp + deltaExp;
+        let newLevel = proj.level;
+        let newTargetExp = proj.targetExp;
+        let newRoyalty = proj.royaltyRevenuePerSec;
+        let newBoost = proj.companyBoostPercent;
+        let newSpecs = { ...proj.specs };
+
+        let leveledUp = false;
+        while (newExp >= newTargetExp) {
+          newLevel += 1;
+          newExp -= newTargetExp;
+          newTargetExp = Math.floor(newTargetExp * 1.6);
+          newRoyalty = Math.floor(newRoyalty * 1.45 + 5);
+          newBoost = Math.min(25, newBoost + 1);
+          leveledUp = true;
+
+          // Specs boost based on category
+          if (proj.category === 'ai') {
+            newSpecs.parametersB = Math.floor((newSpecs.parametersB || 7) * 1.4);
+            newSpecs.accuracyPercent = Math.min(99.9, Math.round(((newSpecs.accuracyPercent || 80) + 1.2) * 10) / 10);
+            newSpecs.tflops = Math.floor((newSpecs.tflops || 100) * 1.5);
+          } else if (proj.category === 'cpu') {
+            newSpecs.nanometers = Math.max(1, Math.round(((newSpecs.nanometers || 7) - 0.4) * 10) / 10);
+            newSpecs.clockGHz = Math.round(((newSpecs.clockGHz || 3.0) + 0.3) * 10) / 10;
+            newSpecs.coresCount = Math.floor((newSpecs.coresCount || 8) * 1.5);
+          } else if (proj.category === 'gpu') {
+            newSpecs.nanometers = Math.max(1, Math.round(((newSpecs.nanometers || 5) - 0.4) * 10) / 10);
+            newSpecs.tflops = Math.floor((newSpecs.tflops || 80) * 1.5);
+            newSpecs.coresCount = Math.floor((newSpecs.coresCount || 2048) * 1.5);
+          }
+        }
+
+        if (leveledUp) {
+          sounds.playCash();
+          showNotification(`🚀 R&D Muvaffaqiyati: ${proj.customName || proj.name} ${newLevel}-Darajaga erishdi!`);
+        }
+
+        return {
+          ...proj,
+          unlocked: true,
+          level: newLevel,
+          accumulatedExp: newExp,
+          targetExp: newTargetExp,
+          royaltyRevenuePerSec: newRoyalty,
+          companyBoostPercent: newBoost,
+          specs: newSpecs,
+        };
+      });
+
       const clickerLvl = prev.clickerLevel || 1;
       const baseTap = Math.floor(1 * Math.pow(1.8, clickerLvl - 1));
       const passiveBonus = fin.grossRevenue * 0.02 * clickerLvl;
@@ -433,6 +520,7 @@ export function useGameEngine() {
         creditScore: score,
         loans: updatedLoans,
         businesses: updatedBusinesses,
+        rdProjects: updatedRdProjects,
         inflationRate: newInflation,
         centralBankRate: newCBRate,
         lastTickTime: now,
@@ -1096,6 +1184,26 @@ export function useGameEngine() {
     showNotification('Game reset to default state.');
   }, [showNotification]);
 
+  // Update R&D Project Budget Allocation
+  const updateRdBudget = useCallback((projectId: string, budget: number) => {
+    setState((prev) => ({
+      ...prev,
+      rdProjects: (prev.rdProjects || []).map((p) =>
+        p.id === projectId ? { ...p, allocatedBudgetPerSec: Math.max(0, budget) } : p
+      ),
+    }));
+  }, []);
+
+  // Rename R&D Model / Chip Project Name
+  const renameRdProject = useCallback((projectId: string, customName: string) => {
+    setState((prev) => ({
+      ...prev,
+      rdProjects: (prev.rdProjects || []).map((p) =>
+        p.id === projectId ? { ...p, customName: customName.trim() || p.name } : p
+      ),
+    }));
+  }, []);
+
   const exportSave = useCallback(() => {
     const jsonStr = JSON.stringify(state, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -1141,6 +1249,8 @@ export function useGameEngine() {
     updateSalaryMultiplier,
     completeTraining,
     conductResearch,
+    updateRdBudget,
+    renameRdProject,
     toggleMarketing,
     buyStock,
     sellStock,

@@ -109,6 +109,35 @@ export interface ResearchTech {
   effectDescription: string;
 }
 
+export type RdProjectCategory = 'ai' | 'cpu' | 'gpu' | 'quantum' | 'tech';
+
+export interface RdProjectSpecs {
+  tflops?: number;
+  nanometers?: number;
+  parametersB?: number;
+  accuracyPercent?: number;
+  clockGHz?: number;
+  coresCount?: number;
+}
+
+export interface RdProject {
+  id: string;
+  name: string;
+  customName?: string;
+  category: RdProjectCategory;
+  description: string;
+  iconName: string;
+  level: number;
+  allocatedBudgetPerSec: number;
+  accumulatedExp: number;
+  targetExp: number;
+  royaltyRevenuePerSec: number;
+  companyBoostPercent: number;
+  specs: RdProjectSpecs;
+  unlocked: boolean;
+  requiredNetWorth: number;
+}
+
 export interface MarketingCampaign {
   id: string;
   name: string;
@@ -223,6 +252,7 @@ export interface DetailedFinancials {
   rentExpenses: number;
   maintenanceExpenses: number;
   marketingExpenses: number;
+  rdExpenses: number;
   loanPayments: number;
   baseOpCost: number;
   totalExpenses: number;
@@ -232,6 +262,7 @@ export interface DetailedFinancials {
   netWorth: number;
   totalDebt: number;
   stockDividendRevenue: number;
+  rdRoyaltyRevenue: number;
 }
 
 export interface GameState {
@@ -259,6 +290,7 @@ export interface GameState {
   employees: EmployeeDept[];
   trainings: TrainingProgram[];
   research: ResearchTech[];
+  rdProjects: RdProject[];
   marketing: MarketingCampaign[];
   stocks: StockAsset[];
   crypto: CryptoAsset[];

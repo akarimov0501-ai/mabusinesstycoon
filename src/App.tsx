@@ -41,6 +41,8 @@ export default function App() {
     updateSalaryMultiplier,
     completeTraining,
     conductResearch,
+    updateRdBudget,
+    renameRdProject,
     toggleMarketing,
     buyStock,
     sellStock,
@@ -146,6 +148,8 @@ export default function App() {
               <ResearchView
                 state={state}
                 onConductResearch={conductResearch}
+                onUpdateRdBudget={updateRdBudget}
+                onRenameRdProject={renameRdProject}
               />
             )}
 
