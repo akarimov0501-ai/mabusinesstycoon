@@ -84,6 +84,10 @@ export default function App() {
           state={state}
           mobileOpen={mobileMenuOpen}
           onCloseMobile={() => setMobileMenuOpen(false)}
+          onToggleSound={toggleSound}
+          onSetGameSpeed={setGameSpeed}
+          onToggleCurrency={toggleCurrency}
+          onOpenFinancialReport={() => setShowFinancialReport(true)}
         />
 
         {/* Content Area */}

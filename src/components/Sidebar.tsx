@@ -15,6 +15,13 @@ import {
   X,
   Sparkles,
   Landmark,
+  DollarSign,
+  FileText,
+  Volume2,
+  VolumeX,
+  Play,
+  FastForward,
+  Zap,
 } from 'lucide-react';
 
 export type NavigationTab =
@@ -37,6 +44,10 @@ interface SidebarProps {
   state: GameState;
   mobileOpen: boolean;
   onCloseMobile: () => void;
+  onToggleSound?: () => void;
+  onSetGameSpeed?: (speed: number) => void;
+  onToggleCurrency?: () => void;
+  onOpenFinancialReport?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -45,6 +56,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   state,
   mobileOpen,
   onCloseMobile,
+  onToggleSound,
+  onSetGameSpeed,
+  onToggleCurrency,
+  onOpenFinancialReport,
 }) => {
   const claimableAchievementsCount = state.achievements.filter(
     (a) => a.unlocked
@@ -93,7 +108,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="p-4 border-b border-slate-800 flex items-center justify-between md:hidden">
           <div className="flex items-center gap-2 font-bold text-white">
             <Sparkles className="w-5 h-5 text-emerald-400" />
-            <span>Navigation Menu</span>
+            <span>Hamburger Menyusi</span>
           </div>
           <button
             onClick={onCloseMobile}
@@ -101,6 +116,99 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Quick Tools & Controls (Mobile Hamburger Menu Section) */}
+        <div className="p-3 border-b border-slate-800 bg-slate-950/60 space-y-2.5">
+          <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-1">
+            Tezkor Sozlamalar
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {/* Currency Toggle */}
+            {onToggleCurrency && (
+              <button
+                onClick={onToggleCurrency}
+                className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs border border-amber-500/30 transition shadow-sm"
+                title="Valyutani almashtirish"
+              >
+                <div className="flex items-center gap-1.5">
+                  <DollarSign className="w-4 h-4 text-amber-400" />
+                  <span className="text-[11px]">Valyuta</span>
+                </div>
+                <span className="text-[10px] bg-amber-500/20 px-1.5 py-0.5 rounded font-extrabold text-amber-300">
+                  {state.currency || 'USD'}
+                </span>
+              </button>
+            )}
+
+            {/* Sound Toggle */}
+            {onToggleSound && (
+              <button
+                onClick={onToggleSound}
+                className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition"
+                title="Ovozni yoqish/o'chirish"
+              >
+                <div className="flex items-center gap-1.5">
+                  {state.soundEnabled ? (
+                    <Volume2 className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <VolumeX className="w-4 h-4 text-slate-500" />
+                  )}
+                  <span className="text-[11px]">Ovoz</span>
+                </div>
+                <span className={`text-[9px] px-1 py-0.5 rounded font-semibold ${state.soundEnabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'}`}>
+                  {state.soundEnabled ? 'Yoqiq' : 'O\'chiq'}
+                </span>
+              </button>
+            )}
+          </div>
+
+          {/* Financial P&L Report */}
+          {onOpenFinancialReport && (
+            <button
+              onClick={() => {
+                onOpenFinancialReport();
+                onCloseMobile();
+              }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-blue-950/60 hover:bg-blue-900/80 text-blue-200 font-bold text-xs border border-blue-500/30 transition"
+              title="Moliyaviy Hisobot (P&L)"
+            >
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-blue-400" />
+                <span>Moliyaviy Hisobot (P&L)</span>
+              </div>
+              <span className="text-[10px] text-blue-400 uppercase font-semibold">Ochish</span>
+            </button>
+          )}
+
+          {/* Game Speed Selector */}
+          {onSetGameSpeed && (
+            <div className="space-y-1">
+              <div className="text-[10px] text-slate-400 font-semibold px-1 flex items-center justify-between">
+                <span>Tezlik</span>
+                <span className="text-emerald-400 font-bold">{state.gameSpeed || 1}x</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700/60">
+                {[1, 2, 5].map((speed) => (
+                  <button
+                    key={speed}
+                    onClick={() => onSetGameSpeed(speed)}
+                    className={`py-1 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all ${
+                      state.gameSpeed === speed
+                        ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+                    }`}
+                  >
+                    {speed === 1 && <Play className="w-3 h-3" />}
+                    {speed === 2 && <FastForward className="w-3 h-3" />}
+                    {speed === 5 && <Zap className="w-3 h-3" />}
+                    {speed}x
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Navigation Item List */}

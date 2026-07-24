@@ -71,14 +71,14 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Center: Live Financial Metrics */}
-        <div className="flex items-center justify-center gap-1.5 sm:gap-4 bg-slate-950/80 px-2 sm:px-4 py-1 sm:py-1.5 rounded-2xl border border-slate-800/80 min-w-0 flex-1 max-w-xl mx-1 sm:mx-auto">
+        <div className="flex items-center justify-center gap-2 sm:gap-4 bg-slate-950/80 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-2xl border border-slate-800/80 min-w-0 flex-1 max-w-xl mx-1 sm:mx-auto">
           {/* Naqd Pul */}
-          <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
             <div className="p-1 sm:p-1.5 rounded-lg bg-amber-500/10 text-amber-400 shrink-0">
               <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
             <div className="min-w-0">
-              <div className="text-[8px] sm:text-[10px] text-slate-400 uppercase tracking-wider font-semibold truncate hidden min-[360px]:block">Naqd Pul</div>
+              <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider font-semibold truncate">Naqd Pul</div>
               <div className="font-black text-xs sm:text-sm md:text-base text-amber-400 tracking-tight truncate">
                 {formatMoney(state.cash, currency)}
               </div>
@@ -88,7 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="h-5 sm:h-8 w-px bg-slate-800 shrink-0" />
 
           {/* Sof Foyda */}
-          <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
             <div
               className={`p-1 sm:p-1.5 rounded-lg shrink-0 ${
                 financials.netProfitPerSec >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
@@ -97,7 +97,7 @@ export const Header: React.FC<HeaderProps> = ({
               <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
             <div className="min-w-0">
-              <div className="text-[8px] sm:text-[10px] text-slate-400 uppercase tracking-wider font-semibold truncate hidden min-[360px]:block">Sof Foyda</div>
+              <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider font-semibold truncate">Sof Foyda</div>
               <div
                 className={`font-black text-xs sm:text-sm md:text-base tracking-tight truncate ${
                   financials.netProfitPerSec >= 0 ? 'text-emerald-400' : 'text-rose-400'
@@ -120,8 +120,8 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Right: Controls & Actions */}
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        {/* Right: Controls & Actions (Hidden on Mobile, bundled into Hamburger Menu) */}
+        <div className="hidden md:flex items-center gap-1 sm:gap-2 shrink-0">
           {/* Currency Toggle */}
           {onToggleCurrency && (
             <button
