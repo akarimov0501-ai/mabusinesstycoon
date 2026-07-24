@@ -68,14 +68,6 @@ export function useGameEngine() {
             });
           }
 
-          // Sanitize legacy inflated cash from previous uncalibrated versions
-          let sanitizedCash = parsed.cash ?? initialGameState.cash;
-          if (totalAssetsValue < 500000 && sanitizedCash > 1000000) {
-            sanitizedCash = Math.max(100, Math.min(sanitizedCash, totalAssetsValue * 2 + 5000));
-          } else if (totalAssetsValue < 50000000 && sanitizedCash > 100000000) {
-            sanitizedCash = Math.max(1000, Math.min(sanitizedCash, totalAssetsValue * 2 + 50000));
-          }
-
           const updatedRdProjects = (parsed.rdProjects || initialGameState.rdProjects).map((proj: any) => {
             const defaultProj = initialGameState.rdProjects.find((p) => p.id === proj.id);
             return {
@@ -84,14 +76,42 @@ export function useGameEngine() {
             };
           });
 
+          const updatedLuxuryAssets = initialGameState.luxuryAssets.map((defaultLux) => {
+            const savedLux = (parsed.luxuryAssets || []).find((l: any) => l.id === defaultLux.id);
+            if (!savedLux) return defaultLux;
+            return {
+              ...defaultLux,
+              ...savedLux,
+              ownedCount: savedLux.ownedCount ?? (savedLux.owned ? 1 : 0),
+            };
+          });
+
+          const updatedPoliticalOffices = initialGameState.politicalOffices.map((defaultOff) => {
+            const savedOff = (parsed.politicalOffices || []).find((o: any) => o.id === defaultOff.id);
+            return savedOff ? { ...defaultOff, ...savedOff } : defaultOff;
+          });
+
+          const updatedLobbyingPolicies = initialGameState.lobbyingPolicies.map((defaultPol) => {
+            const savedPol = (parsed.lobbyingPolicies || []).find((p: any) => p.id === defaultPol.id);
+            return savedPol ? { ...defaultPol, ...savedPol } : defaultPol;
+          });
+
+          const updatedGovtContracts = initialGameState.govtContracts.map((defaultGc) => {
+            const savedGc = (parsed.govtContracts || []).find((c: any) => c.id === defaultGc.id);
+            return savedGc ? { ...defaultGc, ...savedGc } : defaultGc;
+          });
+
           return {
             ...initialGameState,
             ...parsed,
-            cash: sanitizedCash,
             businesses: updatedBusinesses,
             realEstate: updatedRealEstate,
             employees: updatedEmployees,
             rdProjects: updatedRdProjects,
+            luxuryAssets: updatedLuxuryAssets,
+            politicalOffices: updatedPoliticalOffices,
+            lobbyingPolicies: updatedLobbyingPolicies,
+            govtContracts: updatedGovtContracts,
             lastTickTime: Date.now(),
           };
         } catch {
@@ -618,7 +638,7 @@ export function useGameEngine() {
       const baseTap = Math.floor(1 * Math.pow(1.8, clickerLvl - 1));
       const passiveBonus = fin.grossRevenue * 0.02 * clickerLvl;
       const netWorthBonus = (fin.netWorth || 0) * 0.0001 * clickerLvl;
-      const currentTapVal = Math.max(1, Math.round(baseTap + passiveBonus + netWorthBonus));
+      const currentTapVal = Math.min(10000000, Math.max(1, Math.round(baseTap + passiveBonus + netWorthBonus)));
 
       return {
         ...prev,
@@ -747,7 +767,7 @@ export function useGameEngine() {
       const baseTap = Math.floor(1 * Math.pow(1.8, level - 1));
       const passiveBonus = fin.grossRevenue * 0.02 * level;
       const netWorthBonus = (prev.netWorth || 0) * 0.0001 * level;
-      const tapVal = Math.max(1, Math.round(baseTap + passiveBonus + netWorthBonus));
+      const tapVal = Math.min(10000000, Math.max(1, Math.round(baseTap + passiveBonus + netWorthBonus)));
 
       return {
         ...prev,
