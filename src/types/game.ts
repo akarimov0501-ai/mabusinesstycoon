@@ -328,6 +328,14 @@ export interface GameState {
   totalDividendsPaid: number;
   prestigePoints: number;
   luxuryAssets: LuxuryAsset[];
+
+  // Political Arena & Government Influence Module
+  publicApproval: number; // 0 to 100%
+  politicalParty: string;
+  currentOffice: PoliticalOfficeType | 'Citizen';
+  politicalOffices: PoliticalOffice[];
+  lobbyingPolicies: LobbyingPolicy[];
+  govtContracts: GovtContract[];
 }
 
 export type LuxuryCategory =
@@ -344,7 +352,7 @@ export interface LuxuryAsset {
   description: string;
   cost: number; // in personal cash
   prestigePoints: number;
-  owned: boolean;
+  ownedCount: number; // quantity owned
   iconName: string; // Lucide icon name
   upkeepPerSec?: number;
   location?: string;
@@ -360,5 +368,45 @@ export interface ForbesEntry {
   avatar: string;
   country: string;
 }
+
+export type PoliticalOfficeType = 'Mayor' | 'Governor' | 'Minister' | 'President';
+
+export interface PoliticalOffice {
+  id: PoliticalOfficeType;
+  title: string;
+  requiredPrestige: number;
+  campaignCost: number; // in personalCash
+  requiredApproval: number; // approval %
+  salaryPerSec: number; // government salary
+  powerDescription: string;
+  isOccupied: boolean;
+  perks: string[];
+}
+
+export interface LobbyingPolicy {
+  id: string;
+  name: string;
+  description: string;
+  cost: number; // in corporate cash
+  effectDescription: string;
+  status: 'available' | 'lobbying' | 'enacted';
+  progressSec: number;
+  targetSec: number;
+  taxDiscount?: number;
+  cogsDiscount?: number;
+  loanRateDiscount?: number;
+  govtContractBoost?: number;
+}
+
+export interface GovtContract {
+  id: string;
+  title: string;
+  department: string;
+  revenuePerSec: number;
+  requiredNetWorth: number;
+  requiredOffice?: PoliticalOfficeType;
+  active: boolean;
+}
+
 
 

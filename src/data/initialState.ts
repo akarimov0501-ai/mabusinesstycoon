@@ -1,5 +1,6 @@
 import { GameState, Business, Country, EmployeeDept, TrainingProgram, ResearchTech, RdProject, MarketingCampaign, StockAsset, CryptoAsset, RealEstateAsset, StartupInvestment, Competitor, Achievement } from '../types/game';
 import { INITIAL_LUXURY_ASSETS } from './luxuryAssets';
+import { INITIAL_POLITICAL_OFFICES, INITIAL_LOBBYING_POLICIES, INITIAL_GOVT_CONTRACTS } from './politicsData';
 
 export const initialBusinesses: Business[] = [
   // Starting
@@ -1253,4 +1254,12 @@ export const initialGameState: GameState = {
   totalDividendsPaid: 0,
   prestigePoints: 0,
   luxuryAssets: INITIAL_LUXURY_ASSETS,
+
+  // Political Arena & Government Influence Module
+  publicApproval: 50,
+  politicalParty: 'Mustaqil Biznes Alyansi',
+  currentOffice: 'Citizen',
+  politicalOffices: INITIAL_POLITICAL_OFFICES,
+  lobbyingPolicies: INITIAL_LOBBYING_POLICIES,
+  govtContracts: INITIAL_GOVT_CONTRACTS,
 };

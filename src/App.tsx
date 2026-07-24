@@ -16,6 +16,7 @@ import { AchievementsView } from './components/views/AchievementsView';
 import { StatisticsView } from './components/views/StatisticsView';
 import { SettingsView } from './components/views/SettingsView';
 import { LuxuryView } from './components/views/LuxuryView';
+import { PoliticsView } from './components/views/PoliticsView';
 import { EventModal } from './components/modals/EventModal';
 import { OfflineModal } from './components/modals/OfflineModal';
 import { FinancialReportModal } from './components/modals/FinancialReportModal';
@@ -71,6 +72,11 @@ export default function App() {
     payDividend,
     buyLuxuryAsset,
     sellLuxuryAsset,
+    runForOffice,
+    startLobbying,
+    bidGovtContract,
+    fundPRCampaign,
+    setPoliticalParty,
   } = useGameEngine();
 
   const activeBusinessesCount = state.businesses.filter((b) => b.level > 0).length;
@@ -153,6 +159,18 @@ export default function App() {
                 onSellAsset={sellLuxuryAsset}
                 onPayDividend={payDividend}
                 onSetCeoSalary={setCeoSalary}
+              />
+            )}
+
+            {activeTab === 'politics' && (
+              <PoliticsView
+                state={state}
+                financials={financials}
+                onRunForOffice={runForOffice}
+                onStartLobbying={startLobbying}
+                onBidGovtContract={bidGovtContract}
+                onFundPRCampaign={fundPRCampaign}
+                onSetPoliticalParty={setPoliticalParty}
               />
             )}
 

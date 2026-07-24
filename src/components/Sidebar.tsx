@@ -23,6 +23,7 @@ import {
   FastForward,
   Zap,
   Crown,
+  Vote,
 } from 'lucide-react';
 
 export type NavigationTab =
@@ -30,6 +31,7 @@ export type NavigationTab =
   | 'businesses'
   | 'bank'
   | 'luxury'
+  | 'politics'
   | 'employees'
   | 'research'
   | 'marketing'
@@ -68,13 +70,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ).length;
 
   const activeLoansCount = (state.loans || []).length;
-  const ownedLuxuryCount = (state.luxuryAssets || []).filter((a) => a.owned).length;
+  const ownedLuxuryCount = (state.luxuryAssets || []).filter((a) => (a.ownedCount || 0) > 0).length;
+  const currentOfficeName = state.currentOffice !== 'Citizen' ? state.currentOffice : undefined;
 
   const navItems: { id: NavigationTab; label: string; icon: React.FC<{ className?: string }>; badge?: number | string }[] = [
     { id: 'dashboard', label: 'Boshqaruv Paneli', icon: LayoutDashboard },
     { id: 'businesses', label: 'Bizneslar', icon: Building2, badge: state.businesses.filter((b) => b.level > 0).length },
     { id: 'bank', label: 'Bank va Kreditlar', icon: Landmark, badge: activeLoansCount > 0 ? activeLoansCount : undefined },
     { id: 'luxury', label: 'Hashamat & Prestige', icon: Crown, badge: ownedLuxuryCount > 0 ? ownedLuxuryCount : undefined },
+    { id: 'politics', label: 'Siyosat va Lobbiylik', icon: Vote, badge: currentOfficeName },
     { id: 'employees', label: 'Xodimlar va HR', icon: Users },
     { id: 'research', label: 'R&D va Texnologiyalar', icon: FlaskConical, badge: Math.floor(state.researchPoints) > 0 ? `${Math.floor(state.researchPoints)} RP` : undefined },
     { id: 'marketing', label: 'Marketing va Reklama', icon: Megaphone },

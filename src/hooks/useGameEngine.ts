@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { GameState, GameEvent, DetailedFinancials, BankLoan, DeepManagementConfig } from '../types/game';
+import { GameState, GameEvent, DetailedFinancials, BankLoan, DeepManagementConfig, PoliticalOfficeType } from '../types/game';
 import { initialGameState } from '../data/initialState';
 import { randomEvents } from '../data/events';
 import { sounds } from '../utils/sound';
@@ -337,6 +337,13 @@ export function useGameEngine() {
     const maxProfitCap = grossRevenue * 0.28;
     const netProfitPerSec = grossRevenue > 0 && rawNetProfit > maxProfitCap ? maxProfitCap : rawNetProfit;
 
+    // Active Government Procurement Contracts Revenue
+    (s.govtContracts || []).forEach((gc) => {
+      if (gc.active) {
+        grossRevenue += gc.revenuePerSec;
+      }
+    });
+
     // Asset Net worth calculation
     let assetValue = s.cash + (s.personalCash || 0);
     s.businesses.forEach((b) => {
@@ -352,8 +359,9 @@ export function useGameEngine() {
       assetValue += re.ownedCount * re.cost;
     });
     (s.luxuryAssets || []).forEach((lux) => {
-      if (lux.owned) {
-        assetValue += lux.cost;
+      const count = lux.ownedCount || 0;
+      if (count > 0) {
+        assetValue += count * lux.cost;
       }
     });
     assetValue += s.goldOz * s.goldPrice;
@@ -396,15 +404,34 @@ export function useGameEngine() {
       let luxuryUpkeepSec = 0;
       let assetPrestige = 0;
       (prev.luxuryAssets || []).forEach((lux) => {
-        if (lux.owned) {
-          assetPrestige += lux.prestigePoints;
-          if (lux.upkeepPerSec) luxuryUpkeepSec += lux.upkeepPerSec;
+        const count = lux.ownedCount || 0;
+        if (count > 0) {
+          assetPrestige += count * lux.prestigePoints;
+          if (lux.upkeepPerSec) luxuryUpkeepSec += count * lux.upkeepPerSec;
         }
       });
 
-      const salaryGained = (prev.ceoSalaryPerSec || 0) * deltaSec;
+      // Government Office Salary
+      const currentGovtOffice = (prev.politicalOffices || []).find((o) => o.id === prev.currentOffice);
+      const govtSalarySec = currentGovtOffice ? currentGovtOffice.salaryPerSec : 0;
+
+      const salaryGained = ((prev.ceoSalaryPerSec || 0) + govtSalarySec) * deltaSec;
       const upkeepPaid = luxuryUpkeepSec * deltaSec;
       const newPersonalCash = Math.max(0, (prev.personalCash || 0) + salaryGained - upkeepPaid);
+
+      // Advance Active Lobbying Policies
+      const updatedLobbyingPolicies = (prev.lobbyingPolicies || []).map((pol) => {
+        if (pol.status === 'lobbying') {
+          const newProgress = pol.progressSec + deltaSec;
+          if (newProgress >= pol.targetSec) {
+            sounds.playSuccess();
+            showNotification(`🏛 Qonun Qabul Qilindi! "${pol.name}" kuchga kirdi!`);
+            return { ...pol, progressSec: pol.targetSec, status: 'enacted' as const };
+          }
+          return { ...pol, progressSec: newProgress };
+        }
+        return pol;
+      });
 
       // Update Bank Loans (deduct remaining balance)
       const updatedLoans = (prev.loans || []).map((loan) => {
@@ -616,6 +643,7 @@ export function useGameEngine() {
         competitors: updatedCompetitors,
         achievements: updatedAchievements,
         history: updatedHistory,
+        lobbyingPolicies: updatedLobbyingPolicies,
         tapEarnings: currentTapVal,
       };
     });
@@ -1361,49 +1389,170 @@ export function useGameEngine() {
     });
   }, [showNotification]);
 
-  const buyLuxuryAsset = useCallback((assetId: string) => {
+  const buyLuxuryAsset = useCallback((assetId: string, count: number = 1) => {
     setState((prev) => {
       const asset = (prev.luxuryAssets || []).find((l) => l.id === assetId);
-      if (!asset) return prev;
-      if (asset.owned) {
-        showNotification('Bu asset allaqachon xarid qilingan!');
-        return prev;
-      }
+      if (!asset || count <= 0) return prev;
+      const totalCost = asset.cost * count;
       const pCash = prev.personalCash || 0;
-      if (pCash < asset.cost) {
-        showNotification(`Shaxsiy hisobingizda etarli pul yo'q! Xarid uchun: $${asset.cost.toLocaleString()}`);
+      if (pCash < totalCost) {
+        showNotification(`Shaxsiy hisobingizda etarli pul yo'q! ${count}x xarid uchun: $${totalCost.toLocaleString()}`);
         sounds.playError();
         return prev;
       }
       sounds.playSuccess();
-      showNotification(`Tabriklaymiz! "${asset.name}" shaxsiy mulkingizga aylandi!`);
+      showNotification(`Tabriklaymiz! ${count}x "${asset.name}" shaxsiy mulkingizga aylandi!`);
       return {
         ...prev,
-        personalCash: pCash - asset.cost,
-        prestigePoints: (prev.prestigePoints || 0) + asset.prestigePoints,
+        personalCash: pCash - totalCost,
+        prestigePoints: (prev.prestigePoints || 0) + asset.prestigePoints * count,
         luxuryAssets: (prev.luxuryAssets || []).map((l) =>
-          l.id === assetId ? { ...l, owned: true } : l
+          l.id === assetId ? { ...l, ownedCount: (l.ownedCount || 0) + count } : l
         ),
       };
     });
   }, [showNotification]);
 
-  const sellLuxuryAsset = useCallback((assetId: string) => {
+  const sellLuxuryAsset = useCallback((assetId: string, count: number = 1) => {
     setState((prev) => {
       const asset = (prev.luxuryAssets || []).find((l) => l.id === assetId);
-      if (!asset || !asset.owned) return prev;
-      const refund = asset.cost * 0.8; // 80% resale value
+      if (!asset || (asset.ownedCount || 0) < count || count <= 0) return prev;
+      const refund = asset.cost * 0.8 * count; // 80% resale value
       sounds.playCash();
-      showNotification(`"${asset.name}" $${refund.toLocaleString()} evaziga sotildi.`);
+      showNotification(`${count}x "${asset.name}" $${refund.toLocaleString()} evaziga sotildi.`);
       return {
         ...prev,
         personalCash: (prev.personalCash || 0) + refund,
-        prestigePoints: Math.max(0, (prev.prestigePoints || 0) - asset.prestigePoints),
+        prestigePoints: Math.max(0, (prev.prestigePoints || 0) - asset.prestigePoints * count),
         luxuryAssets: (prev.luxuryAssets || []).map((l) =>
-          l.id === assetId ? { ...l, owned: false } : l
+          l.id === assetId ? { ...l, ownedCount: Math.max(0, (l.ownedCount || 0) - count) } : l
         ),
       };
     });
+  }, [showNotification]);
+
+  // Political Arena Actions
+  const runForOffice = useCallback((officeId: PoliticalOfficeType) => {
+    setState((prev) => {
+      const office = (prev.politicalOffices || []).find((o) => o.id === officeId);
+      if (!office) return prev;
+      if (prev.currentOffice === officeId) {
+        showNotification('Siz allaqachon ushbu davlat lavozimidasiz!');
+        return prev;
+      }
+      if ((prev.prestigePoints || 0) < office.requiredPrestige) {
+        showNotification(`Saylovda qatnashish uchun Prestige nufuzingiz kam! Talab: ${office.requiredPrestige} PTS`);
+        sounds.playError();
+        return prev;
+      }
+      if ((prev.publicApproval || 50) < office.requiredApproval) {
+        showNotification(`Xalq xayrixohligi (Public Approval) yetarli emas! Talab: ${office.requiredApproval}%`);
+        sounds.playError();
+        return prev;
+      }
+      if ((prev.personalCash || 0) < office.campaignCost) {
+        showNotification(`Saylov kampaniyasi uchun shaxsiy balansingizda pul yetarli emas! Talab: $${office.campaignCost.toLocaleString()}`);
+        sounds.playError();
+        return prev;
+      }
+
+      sounds.playAchievement();
+      showNotification(`🏆 G'ALABA! Siz ${office.title} lavozimiga saylandingiz! Davlat maoshi va imtiyozlari kuchga kirdi!`);
+      return {
+        ...prev,
+        personalCash: (prev.personalCash || 0) - office.campaignCost,
+        currentOffice: officeId,
+        politicalOffices: (prev.politicalOffices || []).map((o) =>
+          o.id === officeId ? { ...o, isOccupied: true } : { ...o, isOccupied: false }
+        ),
+      };
+    });
+  }, [showNotification]);
+
+  const startLobbying = useCallback((policyId: string) => {
+    setState((prev) => {
+      const policy = (prev.lobbyingPolicies || []).find((p) => p.id === policyId);
+      if (!policy) return prev;
+      if (policy.status === 'enacted') {
+        showNotification('Ushbu qonun allaqachon qabul qilingan va amal qilmoqda!');
+        return prev;
+      }
+      if (policy.status === 'lobbying') {
+        showNotification('Ushbu qonun bo\'yicha parlamentda lobbiylik jarayoni ketmoqda!');
+        return prev;
+      }
+      if (prev.cash < policy.cost) {
+        showNotification(`Lobbiylik kampaniyasi uchun kompaniyada pul yetarli emas! Talab: $${policy.cost.toLocaleString()}`);
+        sounds.playError();
+        return prev;
+      }
+
+      sounds.playClick();
+      showNotification(`🏛 "${policy.name}" bo'yicha parlamentda lobbiylik jarayoni boshlandi!`);
+      return {
+        ...prev,
+        cash: prev.cash - policy.cost,
+        lobbyingPolicies: (prev.lobbyingPolicies || []).map((p) =>
+          p.id === policyId ? { ...p, status: 'lobbying' as const, progressSec: 0 } : p
+        ),
+      };
+    });
+  }, [showNotification]);
+
+  const bidGovtContract = useCallback((contractId: string) => {
+    setState((prev) => {
+      const contract = (prev.govtContracts || []).find((c) => c.id === contractId);
+      if (!contract) return prev;
+      if (contract.active) {
+        showNotification('Ushbu davlat shartnomasi allaqachon kompaniyangizga biriktirilgan!');
+        return prev;
+      }
+      if (prev.netWorth < contract.requiredNetWorth) {
+        showNotification(`Tenderda qatnashish uchun Net Worth yetarli emas! Talab: $${contract.requiredNetWorth.toLocaleString()}`);
+        sounds.playError();
+        return prev;
+      }
+      if (contract.requiredOffice && prev.currentOffice !== contract.requiredOffice) {
+        showNotification(`Ushbu tender uchun kamida ${contract.requiredOffice} lavozimida bo'lishingiz shart!`);
+        sounds.playError();
+        return prev;
+      }
+
+      sounds.playSuccess();
+      showNotification(`📜 TENDER G'OLIBI! "${contract.title}" davlat buyurtmasi yutib olindi! +$${contract.revenuePerSec.toLocaleString()}/s daromad!`);
+      return {
+        ...prev,
+        govtContracts: (prev.govtContracts || []).map((c) =>
+          c.id === contractId ? { ...c, active: true } : c
+        ),
+      };
+    });
+  }, [showNotification]);
+
+  const fundPRCampaign = useCallback((amount: number) => {
+    setState((prev) => {
+      if ((prev.personalCash || 0) < amount || amount <= 0) {
+        showNotification('PR Kampaniyasi uchun shaxsiy balansingizda pul yetarli emas!');
+        sounds.playError();
+        return prev;
+      }
+      const approvalGain = Math.min(100 - (prev.publicApproval || 50), Math.floor(amount / 50000));
+      sounds.playClick();
+      showNotification(`Aholi o'rtasida PR Kampaniyasi o'tkazildi! Jamoatchilik xayrixohligi +${approvalGain}% oshdi!`);
+      return {
+        ...prev,
+        personalCash: (prev.personalCash || 0) - amount,
+        publicApproval: Math.min(100, (prev.publicApproval || 50) + approvalGain),
+      };
+    });
+  }, [showNotification]);
+
+  const setPoliticalParty = useCallback((name: string) => {
+    setState((prev) => ({
+      ...prev,
+      politicalParty: name.trim() || 'Mustaqil Biznes Alyansi',
+    }));
+    showNotification(`Partiya nomi "${name}" ga o'zgartirildi!`);
   }, [showNotification]);
 
   const financials = calculateFinancials(state);
@@ -1450,6 +1599,11 @@ export function useGameEngine() {
     payDividend,
     buyLuxuryAsset,
     sellLuxuryAsset,
+    runForOffice,
+    startLobbying,
+    bidGovtContract,
+    fundPRCampaign,
+    setPoliticalParty,
   };
 }
 
