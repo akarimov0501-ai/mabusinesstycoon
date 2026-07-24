@@ -305,11 +305,11 @@ export function useGameEngine() {
         };
       }).filter((loan) => loan.remainingAmount > 0.01);
 
-      // Business maintenance degradation (slowly wear down by ~0.03% per sec)
+      // Business maintenance degradation (slowly wear down by ~0.007% per sec, ~3.5 to 4 hours to degrade)
       const updatedBusinesses = prev.businesses.map((b) => {
         if (b.level > 0) {
           const currentCond = b.maintenanceCondition ?? 100;
-          const newCond = Math.max(20, currentCond - 0.03 * deltaSec);
+          const newCond = Math.max(20, currentCond - 0.007 * deltaSec);
           return { ...b, maintenanceCondition: newCond };
         }
         return b;

@@ -23,48 +23,49 @@ export const EmployeesView: React.FC<EmployeesViewProps> = ({
   onCompleteTraining,
 }) => {
   const totalEmployees = state.employees.reduce((acc, e) => acc + e.count, 0);
+  const currency = state.currency || 'USD';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-black text-white tracking-tight">Kadrlar va HR Boshqaruvi</h2>
-          <p className="text-sm text-slate-400">
-            Bo'limlarga xodimlarni yollang, maosh darajasini moslang va malaka oshirish kurslarini moliyalashtiring.
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">Kadrlar va HR</h2>
+          <p className="text-xs sm:text-sm text-slate-400">
+            Bo'limlarga xodimlarni yollang va malaka oshirish seminarlarini o'tkazing.
           </p>
         </div>
 
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl px-4 py-2.5 flex items-center gap-4">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl px-3.5 py-2 flex items-center gap-3 self-start sm:self-auto">
           <div>
-            <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Xodimlar Kayfiyati</div>
-            <div className="text-base font-black text-emerald-400 flex items-center gap-1.5">
-              <Smile className="w-4 h-4 text-emerald-400" />
+            <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Kayfiyat</div>
+            <div className="text-sm sm:text-base font-black text-emerald-400 flex items-center gap-1">
+              <Smile className="w-3.5 h-3.5 text-emerald-400" />
               {Math.round(state.employeeHappiness)}%
             </div>
           </div>
           <div className="h-6 w-px bg-slate-800" />
           <div>
-            <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Jami Xodimlar</div>
-            <div className="text-base font-black text-amber-400">{totalEmployees} kishi</div>
+            <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Jami Xodimlar</div>
+            <div className="text-sm sm:text-base font-black text-amber-400">{totalEmployees} kishi</div>
           </div>
         </div>
       </div>
 
       {/* Employee Departments Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
         {state.employees.map((dept) => {
           const deptSalaryExpense = dept.count * dept.baseSalary * dept.salaryMultiplier;
 
           return (
             <div
               key={dept.id}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-5 flex flex-col justify-between space-y-4 shadow-lg"
+              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-4 sm:p-5 flex flex-col justify-between space-y-3.5 shadow-lg"
             >
               <div>
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-bold text-base text-white">{dept.name}</h3>
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-xl bg-slate-800 text-amber-400">
+                  <h3 className="font-bold text-sm sm:text-base text-white">{dept.name}</h3>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-xl bg-slate-800 text-amber-400 shrink-0">
                     {dept.count} kishi
                   </span>
                 </div>
@@ -72,16 +73,16 @@ export const EmployeesView: React.FC<EmployeesViewProps> = ({
               </div>
 
               {/* Department Benefit Perk */}
-              <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 font-medium">
+              <div className="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 font-medium">
                 ✨ Afzalligi: {dept.effect}
               </div>
 
               {/* Salary Multiplier & Cost */}
               <div className="space-y-2 p-3 rounded-2xl bg-slate-950/60 border border-slate-800 text-xs">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center text-[11px] sm:text-xs">
                   <span className="text-slate-400">Maosh Paketi:</span>
                   <span className="font-bold text-slate-200">
-                    Bozor stavkasining {dept.salaryMultiplier.toFixed(1)}x baravari
+                    {dept.salaryMultiplier.toFixed(1)}x
                   </span>
                 </div>
 
@@ -95,9 +96,9 @@ export const EmployeesView: React.FC<EmployeesViewProps> = ({
                   className="w-full accent-emerald-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer"
                 />
 
-                <div className="flex justify-between items-center text-[11px] text-slate-400 pt-1">
-                  <span>Soniya xarajati:</span>
-                  <span className="font-bold text-rose-400">-{formatMoney(deptSalaryExpense)}/sek</span>
+                <div className="flex justify-between items-center text-[10px] sm:text-[11px] text-slate-400 pt-0.5">
+                  <span>Xarajat:</span>
+                  <span className="font-bold text-rose-400">-{formatMoney(deptSalaryExpense, currency)}/s</span>
                 </div>
               </div>
 
@@ -106,16 +107,16 @@ export const EmployeesView: React.FC<EmployeesViewProps> = ({
                 <button
                   onClick={() => onUpdateEmployees(dept.id, -1)}
                   disabled={dept.count <= 0}
-                  className="py-2.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs flex items-center justify-center gap-1.5 border border-rose-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="py-2 px-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs flex items-center justify-center gap-1 border border-rose-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
-                  <UserMinus className="w-3.5 h-3.5" /> Bo'shatish (-1)
+                  <UserMinus className="w-3.5 h-3.5 shrink-0" /> Bo'shatish
                 </button>
 
                 <button
                   onClick={() => onUpdateEmployees(dept.id, 1)}
-                  className="py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
+                  className="py-2 px-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1 shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
                 >
-                  <UserPlus className="w-3.5 h-3.5" /> Yollash (+1)
+                  <UserPlus className="w-3.5 h-3.5 shrink-0" /> Yollash (+1)
                 </button>
               </div>
             </div>
@@ -124,34 +125,34 @@ export const EmployeesView: React.FC<EmployeesViewProps> = ({
       </div>
 
       {/* Employee Training Programs */}
-      <div className="space-y-4 pt-4">
-        <h3 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+      <div className="space-y-3 pt-2">
+        <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight flex items-center gap-2">
           <GraduationCap className="w-5 h-5 text-emerald-400" />
-          Malaka Oshirish va Seminarlar
+          Malaka Oshirish Seminarlari
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {state.trainings.map((tr) => {
             const canAfford = state.cash >= tr.cost;
 
             return (
               <div
                 key={tr.id}
-                className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-5 flex flex-col justify-between space-y-4 shadow-lg"
+                className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-4 sm:p-5 flex flex-col justify-between space-y-3.5 shadow-lg"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="font-bold text-base text-white">{tr.name}</h4>
+                    <h4 className="font-bold text-sm sm:text-base text-white">{tr.name}</h4>
                     {tr.isCompleted && (
-                      <span className="text-emerald-400 flex items-center gap-1 text-xs font-bold">
+                      <span className="text-emerald-400 flex items-center gap-1 text-xs font-bold shrink-0">
                         <CheckCircle2 className="w-4 h-4" /> Bajarildi
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-300 mt-2">{tr.description}</p>
+                  <p className="text-xs text-slate-300 mt-1.5">{tr.description}</p>
                 </div>
 
-                <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800 text-xs">
+                <div className="p-2.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-xs">
                   <div className="text-amber-400 font-bold">Bonus: {tr.statBoost}</div>
                 </div>
 
@@ -159,14 +160,14 @@ export const EmployeesView: React.FC<EmployeesViewProps> = ({
                   <button
                     onClick={() => onCompleteTraining(tr.id)}
                     disabled={!canAfford}
-                    className={`w-full py-2.5 px-4 rounded-2xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer ${
+                    className={`w-full py-2.5 px-3 rounded-2xl font-bold text-xs flex flex-wrap items-center justify-between gap-1 transition-all cursor-pointer ${
                       canAfford
                         ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20'
                         : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
                     }`}
                   >
-                    <span>Seminarni Moliyalashtirish</span>
-                    <span>{formatMoney(tr.cost)}</span>
+                    <span>Moliyalashtirish</span>
+                    <span>{formatMoney(tr.cost, currency)}</span>
                   </button>
                 ) : (
                   <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-400 text-center font-bold text-xs border border-emerald-500/20">

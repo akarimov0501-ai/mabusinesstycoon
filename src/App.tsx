@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useGameEngine } from './hooks/useGameEngine';
 import { Header } from './components/Header';
 import { Sidebar, NavigationTab } from './components/Sidebar';
+import { BottomNav } from './components/BottomNav';
 import { DashboardView } from './components/views/DashboardView';
 import { BusinessesView } from './components/views/BusinessesView';
 import { BankView } from './components/views/BankView';
@@ -61,18 +62,21 @@ export default function App() {
     importSave,
   } = useGameEngine();
 
+  const activeBusinessesCount = state.businesses.filter((b) => b.level > 0).length;
+  const activeLoansCount = (state.loans || []).length;
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col selection:bg-emerald-500 selection:text-slate-950">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col selection:bg-emerald-500 selection:text-slate-950 overflow-x-hidden w-full max-w-full">
       {/* Toast Notification Banner */}
       {notification && (
-        <div className="fixed top-16 right-4 z-50 bg-emerald-500 text-slate-950 px-4 py-3 rounded-2xl font-bold text-xs shadow-2xl flex items-center gap-2 animate-bounce">
+        <div className="fixed top-16 right-4 z-50 bg-emerald-500 text-slate-950 px-4 py-3 rounded-2xl font-bold text-xs sm:text-sm shadow-2xl flex items-center gap-2 animate-bounce max-w-[90vw]">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span>{notification}</span>
+          <span className="truncate">{notification}</span>
         </div>
       )}
 
       {/* Main Layout Container */}
-      <div className="flex flex-1 relative">
+      <div className="flex flex-1 relative min-w-0 w-full max-w-full overflow-x-hidden">
         {/* Navigation Sidebar */}
         <Sidebar
           activeTab={activeTab}
@@ -83,7 +87,7 @@ export default function App() {
         />
 
         {/* Content Area */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden w-full max-w-full">
           {/* Top Bar Header */}
           <Header
             state={state}
@@ -97,7 +101,7 @@ export default function App() {
           />
 
           {/* Active View Container */}
-          <main className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto space-y-6">
+          <main className="flex-1 p-3 sm:p-5 md:p-8 max-w-7xl w-full mx-auto space-y-6 pb-20 md:pb-8 overflow-x-hidden">
             {activeTab === 'dashboard' && (
               <DashboardView
                 state={state}
@@ -199,6 +203,15 @@ export default function App() {
         </div>
       </div>
 
+      {/* Mobile Bottom Navigation Bar */}
+      <BottomNav
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        onOpenMoreMenu={() => setMobileMenuOpen(true)}
+        businessBadge={activeBusinessesCount}
+        bankBadge={activeLoansCount}
+      />
+
       {/* Random Event Popup Modal */}
       {activeEvent && (
         <EventModal
@@ -226,4 +239,3 @@ export default function App() {
     </div>
   );
 }
-
