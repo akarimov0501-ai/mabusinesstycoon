@@ -21,6 +21,7 @@ import { EventModal } from './components/modals/EventModal';
 import { OfflineModal } from './components/modals/OfflineModal';
 import { FinancialReportModal } from './components/modals/FinancialReportModal';
 import { DeepManagementModal } from './components/modals/DeepManagementModal';
+import { PWAInstallBanner } from './components/PWAInstallBanner';
 import { Business } from './types/game';
 import { CheckCircle2 } from 'lucide-react';
 
@@ -295,6 +296,8 @@ export default function App() {
           }}
         />
       )}
+      {/* PWA Mobile Installation Prompt Banner */}
+      <PWAInstallBanner />
     </div>
   );
 }

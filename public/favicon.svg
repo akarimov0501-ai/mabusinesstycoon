@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#020617"/>
+      <stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background Card -->
+  <rect width="512" height="512" rx="110" fill="url(#bgGrad)"/>
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="none" stroke="url(#goldGrad)" stroke-width="4" opacity="0.4"/>
+
+  <!-- Glowing Emerald Orb -->
+  <circle cx="256" cy="256" r="160" fill="url(#emeraldGrad)" opacity="0.15" filter="url(#glow)"/>
+
+  <!-- Crown Vector -->
+  <path d="M 128 340 L 110 190 L 190 250 L 256 140 L 322 250 L 402 190 L 384 340 Z" fill="url(#goldGrad)" filter="url(#glow)"/>
+  
+  <!-- Crown Jewels -->
+  <circle cx="110" cy="180" r="14" fill="#fbbf24"/>
+  <circle cx="256" cy="130" r="18" fill="#10b981"/>
+  <circle cx="402" cy="180" r="14" fill="#fbbf24"/>
+  
+  <!-- Dollar Symbol Badge -->
+  <rect x="156" y="340" width="200" height="48" rx="24" fill="url(#emeraldGrad)"/>
+  <text x="256" y="373" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="26" fill="#020617" text-anchor="middle">$ TYCOON</text>
+</svg>
